@@ -131,5 +131,17 @@ def pathfinder(event, context):
     sin((destination_lat - lat1) / 2) ** 2 + cos(lat1) * cos(destination_lat) * sin(
       (destination_lon - lon1) / 2) ** 2)))
   #print("The shortest path has length: ", total_dist_mi, "miles")
-  
+
+  import csv
+  temp_csv_file = csv.writer(open("/tmp/path_coordinates.csv", "w+"))
+  # writing the column names
+  temp_csv_file.writerow([round(total_dist_mi,2)])
+  # writing rows in to the CSV file
+  for coord in len(path_arr):
+      temp_csv_file.writerow([path_arr[coord, 0], path_arr[coord, 1]])
+
+  BUCKET_NAME = 'code-output-bucket'
+  client = boto3.client('s3')
+  client.upload_file('/tmp/path_coordinates.csv', BUCKET_NAME,'path_coordinates.csv')
+
   return path_arr.tolist(), total_dist_mi
