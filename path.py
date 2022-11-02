@@ -149,6 +149,6 @@ def pathfinder(event, context):
 
   BUCKET_NAME = 'user-input-image'
   client = boto3.client('s3')
-  client.upload_file('/tmp/path_coordinates.csv', BUCKET_NAME,'path_coordinates.csv')
+  client.upload_file('/tmp/path_coordinates.csv', BUCKET_NAME,'public/path_coordinates.csv')
 
   return path_arr.tolist(), total_dist_mi
