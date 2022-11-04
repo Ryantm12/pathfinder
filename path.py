@@ -153,9 +153,9 @@ def pathfinder(event, context):
 
 
   # Update the csv file in S3 to tell Android studio that the path_coordinates.csv is uploaded
-  state_var = [1]
+  state_var = ['1']
   temp_csv_file_check = csv.writer(open("/tmp/comp-state.csv", "w+"))
-  np.savetxt('/tmp/comp-state.csv', state_var, delimiter=",")
+  np.savetxt('/tmp/comp-state.csv', "1", delimiter=",")
   client.upload_file('/tmp/comp-state.csv', BUCKET_NAME,'public/comp-state.csv')
 
   return path_arr.tolist(), total_dist_mi
