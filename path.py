@@ -153,9 +153,16 @@ def pathfinder(event, context):
 
 
   # Update the csv file in S3 to tell Android studio that the path_coordinates.csv is uploaded
-  state_var = ['1']
-  temp_csv_file_check = csv.writer(open("/tmp/comp-state.csv", "w+"))
-  np.savetxt('/tmp/comp-state.csv', "1", delimiter=",")
+  s3 = boto3.resource('s3')
+  s3.Bucket('user-input-image').download_file('public/comp-state.csv', '/tmp/comp-state.csv') 
+  CSVData = open('/tmp/comp-state.csv')
+  state_var = [1]
+  np.savetxt('/tmp/comp-state.csv', state_var, delimiter=",")
+  client = boto3.client('s3')
   client.upload_file('/tmp/comp-state.csv', BUCKET_NAME,'public/comp-state.csv')
+
+  #temp_csv_file_check = csv.writer(open("/tmp/comp-state.csv", "w+"))
+  #np.savetxt('/tmp/comp-state.csv', "1", delimiter=",")
+  #client.upload_file('/tmp/comp-state.csv', BUCKET_NAME,'public/comp-state.csv')
 
   return path_arr.tolist(), total_dist_mi
