@@ -1,23 +1,24 @@
 ###
-# This file was created by Ryan Middleton for the Aggie Map Navigation Helper team for Senior Capstone Project.
+# This file was created by Ryan Middleton (Ryantm12@tamu.edu) for the Aggie Map Navigation Helper team for Senior Capstone Project.
 # The Aggie Map Navigation Helper guides users through the Texas A&M University campus via an Android App.
 # The user inputs their destination and a picture of their surroundings(with the nearest building)and the phone app will
 # determine their location. This code guides the user through campus from their current location to their destination.
 # The code takes in a set of two gps coordinates, one for a user's current location, and another for destination.
-# This code contains functions and code executions for the pathfinder.
 ###
+
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import LineString, Point
+import osmnx as ox
+import networkx as nx
+from math import sin, cos, asin, sqrt, pi
+import numpy as np
+import csv
+import boto3
 
 def pathfinder(event, context):
   # This function finds the shortest distance path between two points(current and destination)
   # on the network (graph)
-
-  import pandas as pd
-  import geopandas as gpd
-  from shapely.geometry import LineString, Point
-  import osmnx as ox
-  import networkx as nx
-  from math import sin, cos, asin, sqrt, pi
-  import numpy as np
 
   # This function performs the following actions in order:
   # 1. Convert input coordinates
@@ -26,8 +27,6 @@ def pathfinder(event, context):
   # 4. Calculate shortest path length
 
   # Collect user current location and destination from S3
-  import csv
-  import boto3
   s3 = boto3.resource('s3')
   s3.Bucket('user-input-image').download_file('public/start_end_coordinates.csv', '/tmp/start_end_coordinates.csv') 
   CSVData = open('/tmp/start_end_coordinates.csv')
@@ -98,10 +97,8 @@ def pathfinder(event, context):
   new_coord['num'] = new_index
   new_coord = new_coord.set_index('num')
   path_arr = new_coord.to_numpy()
-  #print(" The array of path coordinates:")
-  #print(path_arr)
 
-  # This next code uses haversine formula to find the distance between two coordinates
+  # This next section of code uses haversine formula to find the distance between two coordinates
   # First converts from degrees to radians
   # Iterates over the path array to add up all path lengths
   # Outputs path length in miles
@@ -137,22 +134,18 @@ def pathfinder(event, context):
   total_dist_mi = total_dist_mi + (3958.8 * 2 * asin(sqrt(
     sin((destination_lat - lat1) / 2) ** 2 + cos(lat1) * cos(destination_lat) * sin(
       (destination_lon - lon1) / 2) ** 2)))
-  #print("The shortest path has length: ", total_dist_mi, "miles")
 
-  import boto3
+  # This next section of code writes the output path and length of the path to a csv and upload it to S3
   temp_csv_file = csv.writer(open("/tmp/path_coordinates.csv", "w+"))
-
   len_arr = np.array([[round(total_dist_mi,2),0]])
   path_arr = np.concatenate([len_arr, path_arr])
   np.savetxt('/tmp/path_coordinates.csv', path_arr, delimiter=",")
   np.savetxt('/tmp/path_coordinates.csv', path_arr, fmt="%f", delimiter=",")
-
   BUCKET_NAME = 'user-input-image'
   client = boto3.client('s3')
   client.upload_file('/tmp/path_coordinates.csv', BUCKET_NAME,'public/path_coordinates.csv')
 
-
-  # Update the csv file in S3 to tell Android studio that the path_coordinates.csv is uploaded
+  # Update a csv file in S3 to tell Android studio that the path_coordinates.csv is uploaded(a check buffer)
   s3 = boto3.resource('s3')
   s3.Bucket('user-input-image').download_file('public/comp-state.csv', '/tmp/comp-state.csv') 
   CSVData = open('/tmp/comp-state.csv')
@@ -160,9 +153,5 @@ def pathfinder(event, context):
   np.savetxt('/tmp/comp-state.csv', state_var, delimiter=",")
   client = boto3.client('s3')
   client.upload_file('/tmp/comp-state.csv', BUCKET_NAME,'public/comp-state.csv')
-
-  #temp_csv_file_check = csv.writer(open("/tmp/comp-state.csv", "w+"))
-  #np.savetxt('/tmp/comp-state.csv', "1", delimiter=",")
-  #client.upload_file('/tmp/comp-state.csv', BUCKET_NAME,'public/comp-state.csv')
 
   return path_arr.tolist(), total_dist_mi
